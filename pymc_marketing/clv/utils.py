@@ -350,6 +350,4 @@ def clv_summary(
         )
         summary_columns.append("monetary_value")
 
-    summary_df = customers[summary_columns].astype(float)
-
-    return summary_df.reset_index()
+    return customers.astype(float).reset_index()
