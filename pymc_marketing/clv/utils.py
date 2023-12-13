@@ -335,7 +335,7 @@ def clv_summary(
         / time_scaler
     )
 
-    summary_columns = ["frequency", "recency", "T"]
+    summary_columns = ["frequency", "recency", "T", "min", "max"]
 
     if monetary_value_col:
         # create an index of first purchases
@@ -350,4 +350,4 @@ def clv_summary(
         )
         summary_columns.append("monetary_value")
 
-    return customers.astype(float).reset_index()
+    return customers[summary_columns].astype(float).reset_index()
