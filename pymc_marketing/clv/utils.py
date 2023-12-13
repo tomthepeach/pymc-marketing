@@ -349,5 +349,5 @@ def clv_summary(
             .fillna(0)
         )
         summary_columns.append("monetary_value")
-
+    customers = customers.astype({"frequency": float, "recency": float, "T": float, "monetary_value": float})
     return customers[summary_columns].reset_index()
