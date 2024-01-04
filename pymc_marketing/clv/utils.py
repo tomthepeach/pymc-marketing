@@ -323,6 +323,7 @@ def clv_summary(
 
     # subtract 1 from count for non-repeat customers
     customers["frequency"] = customers["count"] - 1
+    
 
     customers["T"] = (
         (observation_period_end_ts - customers["min"])
@@ -335,19 +336,17 @@ def clv_summary(
         / time_scaler
     )
 
-    summary_columns = ["frequency", "recency", "T", "min", "max"]
+    summary_columns = ["frequency", "recency", "T", "min", "max", "count"]
 
     if monetary_value_col:
+        customers["monetary_value_incl"] = repeated_transactions.groupby(customer_id_col)[monetary_value_col].mean()
         # create an index of first purchases
         first_purchases = repeated_transactions[repeated_transactions["first"]].index
         # Exclude first purchases from the mean value calculation,
         # by setting as null, then imputing with zero
         repeated_transactions.loc[first_purchases, monetary_value_col] = np.nan
-        customers["monetary_value"] = (
-            repeated_transactions.groupby(customer_id_col)[monetary_value_col]
-            .mean()
-            .fillna(0)
-        )
-        summary_columns.append("monetary_value")
+        customers["monetary_value"] = repeated_transactions.groupby(customer_id_col)[monetary_value_col].mean().fillna(0)
+        summary_columns += ["monetary_value", "monetary_value_incl"]
+
     customers = customers.astype({"frequency": float, "recency": float, "T": float, "monetary_value": float})
     return customers[summary_columns].reset_index()
