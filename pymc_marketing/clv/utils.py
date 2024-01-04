@@ -349,7 +349,7 @@ def clv_summary(
         # by setting as null, then imputing with zero
         repeated_transactions.loc[first_purchases, monetary_value_col] = np.nan
         customers["monetary_value"] = repeated_transactions.groupby(customer_id_col)[monetary_value_col].mean().fillna(0)
-        summary_columns += ["monetary_value", "monetary_value_incl"]
+        summary_columns += ["monetary_value", "monetary_value_incl", "total_monetary_value"]
 
     customers = customers.astype({"frequency": float, "recency": float, "T": float, "monetary_value": float})
     return customers[summary_columns].reset_index()
