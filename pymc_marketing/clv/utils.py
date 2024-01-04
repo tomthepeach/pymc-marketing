@@ -339,7 +339,10 @@ def clv_summary(
     summary_columns = ["frequency", "recency", "T", "min", "max", "count"]
 
     if monetary_value_col:
-        customers["monetary_value_incl"] = repeated_transactions.groupby(customer_id_col)[monetary_value_col].mean()
+        monetary_group = repeated_transactions.groupby(customer_id_col)[monetary_value_col]
+        customers["monetary_value_incl"] = monetary_group.mean()
+        customers["total_monetary_value"] = monetary_group.sum()
+
         # create an index of first purchases
         first_purchases = repeated_transactions[repeated_transactions["first"]].index
         # Exclude first purchases from the mean value calculation,
