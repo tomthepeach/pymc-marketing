@@ -87,15 +87,15 @@ class BaseTestGammaGammaModel:
 class TestGammaGammaModel(BaseTestGammaGammaModel):
     def test_missing_customer_id(self, data):
         # Create a version of the data that's missing the 'customer_id' column
-        data_invalid = data.drop(columns="customer_id")
-        with pytest.raises(KeyError, match="data must contain a customer_id column"):
+        data_invalid = data.reset_index(drop=True)
+        with pytest.raises(KeyError, match="customer_id index is missing from data"):
             GammaGammaModel(data=data_invalid)
 
     def test_missing_frequency(self, data):
         # Create a version of the data that's missing the 'frequency' column
         data_invalid = data.drop(columns="frequency")
 
-        with pytest.raises(KeyError, match="data must contain a frequency column"):
+        with pytest.raises(KeyError, match="frequency column is missing from data"):
             GammaGammaModel(data=data_invalid)
 
     def test_missing_mean_transaction_value(self, data):
@@ -103,7 +103,7 @@ class TestGammaGammaModel(BaseTestGammaGammaModel):
         data_invalid = data.drop(columns="mean_transaction_value")
 
         with pytest.raises(
-            KeyError, match="data must contain a mean_transaction_value column"
+            KeyError, match="mean_transaction_value column is missing from data"
         ):
             GammaGammaModel(data=data_invalid)
 

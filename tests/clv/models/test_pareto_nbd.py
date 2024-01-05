@@ -29,7 +29,7 @@ class TestParetoNBDModel:
         test_data["customer_id"] = test_data.index
 
         cls.data = test_data
-        cls.customer_id = test_data["customer_id"]
+        cls.customer_id = test_data.index
         cls.frequency = test_data["frequency"]
         cls.recency = test_data["recency"]
         cls.T = test_data["T"]
@@ -132,7 +132,7 @@ class TestParetoNBDModel:
         # Create a version of the data that's missing the 'customer_id' column
         data_invalid = self.data.drop(columns="customer_id")
 
-        with pytest.raises(KeyError, match="customer_id column is missing from data"):
+        with pytest.raises(KeyError, match="customer_id index is missing from data"):
             ParetoNBDModel(data=data_invalid)
 
     def test_missing_frequency(self):

@@ -117,9 +117,9 @@ class TestBetaGeoModel:
 
     def test_missing_customer_id(self, data):
         # Create a version of the data that's missing the 'customer_id' column
-        data_invalid = data.drop(columns="customer_id")
+        data_invalid = data.reset_index(drop=True)
 
-        with pytest.raises(KeyError, match="customer_id column is missing from data"):
+        with pytest.raises(KeyError, match="customer_id index is missing from data"):
             BetaGeoModel(data=data_invalid)
 
     def test_missing_frequency(self, data):

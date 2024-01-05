@@ -113,9 +113,9 @@ class BetaGeoModel(CLVModel):
         sampler_config: Optional[Dict] = None,
     ):
         try:
-            self.customer_id = data["customer_id"]
+            self.customer_id = data.index
         except KeyError:
-            raise KeyError("customer_id column is missing from data")
+            raise KeyError("customer_id index is missing from data")
         try:
             self.frequency = data["frequency"]
         except KeyError:

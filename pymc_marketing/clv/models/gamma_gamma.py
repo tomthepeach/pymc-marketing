@@ -244,9 +244,9 @@ class GammaGammaModel(BaseGammaGammaModel):
         sampler_config: Optional[Dict] = None,
     ):
         try:
-            self.customer_id: Union[np.ndarray, pd.Series] = data["customer_id"]
+            self.customer_id: Union[np.ndarray, pd.Series] = data.index
         except KeyError:
-            raise KeyError("data must contain a customer_id column")
+            raise KeyError("data must have customer_id as index")
         try:
             self.mean_transaction_value: Union[
                 np.ndarray, pd.Series, TensorVariable

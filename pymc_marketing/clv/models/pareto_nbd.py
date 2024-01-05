@@ -168,12 +168,12 @@ class ParetoNBDModel(CLVModel):
     ):
         # Assign inputs to attributes and perform validation checks
         try:
-            self.customer_id = data["customer_id"]
+            self.customer_id = data.index
             if len(np.unique(self.customer_id)) != len(self.customer_id):
                 raise ValueError("Customers must have unique ID labels.")
             self.coords = {"customer_id": self.customer_id}
         except KeyError:
-            raise KeyError("customer_id column is missing from data")
+            raise KeyError("customer_id must be provided as index of data")
         try:
             self.frequency = data["frequency"]
         except KeyError:
