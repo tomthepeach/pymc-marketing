@@ -26,7 +26,7 @@ def customer_lifetime_value(
     frequency: Union[pd.Series, np.ndarray],
     recency: Union[pd.Series, np.ndarray],
     T: Union[pd.Series, np.ndarray],
-    monetary_value: Union[pd.Series, np.ndarray, xarray.DataArray],
+    mean_transaction_value: Union[pd.Series, np.ndarray, xarray.DataArray],
     time: int = 12,
     discount_rate: float = 0.01,
     freq: str = "D",
@@ -51,8 +51,8 @@ def customer_lifetime_value(
         The recency vector of customers' purchases (denoted t_x in literature).
     T: array_like
         The vector of customers' age (time since first purchase)
-    monetary_value: array_like
-        The monetary value vector of customer's purchases (denoted m in literature).
+    mean_transaction_value: array_like
+        The average transaction value vector of customer's purchases (denoted m in literature).
     time: int, optional
         The lifetime expected for the user in months. Default: 12
     discount_rate: float, optional
@@ -83,9 +83,9 @@ def customer_lifetime_value(
     factor = {"W": 4.345, "M": 1.0, "D": 30, "H": 30 * 24}[freq]
 
     # Monetary value can be passed as a DataArray, with entries per chain and draw or as a simple vector
-    if not isinstance(monetary_value, xarray.DataArray):
-        monetary_value = to_xarray(customer_id, monetary_value)
-    monetary_value = _squeeze_dims(monetary_value)
+    if not isinstance(mean_transaction_value, xarray.DataArray):
+        mean_transaction_value = to_xarray(customer_id, mean_transaction_value)
+    mean_transaction_value = _squeeze_dims(mean_transaction_value)
 
     frequency, recency, T = to_xarray(customer_id, frequency, recency, T)
 
@@ -116,7 +116,7 @@ def customer_lifetime_value(
         prev_expected_num_purchases = new_expected_num_purchases
 
         # sum up the CLV estimates of all the periods and apply discounted cash flow
-        clv = clv + (monetary_value * expected_transactions) / (1 + discount_rate) ** (
+        clv = clv + (mean_transaction_value * expected_transactions) / (1 + discount_rate) ** (
             i / factor
         )
 
@@ -133,7 +133,7 @@ def _find_first_transactions(
     transactions: pd.DataFrame,
     customer_id_col: str,
     datetime_col: str,
-    monetary_value_col: Optional[str] = None,
+    mean_transaction_value_col: Optional[str] = None,
     datetime_format: Optional[str] = None,
     observation_period_end: Optional[Union[str, pd.Period, datetime]] = None,
     time_unit: str = "D",
@@ -142,7 +142,7 @@ def _find_first_transactions(
     Return dataframe with first transactions.
 
     This takes a DataFrame of transaction data of the form:
-        customer_id, datetime [, monetary_value]
+        customer_id, datetime [, mean_transaction_value]
     and appends a column named 'repeated' to the transaction log which indicates which rows
     are repeated transactions for that customer_id.
 
@@ -157,7 +157,7 @@ def _find_first_transactions(
         Column in the transactions DataFrame that denotes the customer_id.
     datetime_col:  string
         Column in the transactions DataFrame that denotes the datetime the purchase was made.
-    monetary_value_col: string, optional
+    mean_transaction_value_col: string, optional
         Column in the transactions DataFrame that denotes the monetary value of the transaction.
         Optional; only needed for spend estimation models like the Gamma-Gamma model.
     datetime_format: string, optional
@@ -182,8 +182,8 @@ def _find_first_transactions(
     if isinstance(observation_period_end, str):
         observation_period_end = pd.to_datetime(observation_period_end)
 
-    if monetary_value_col:
-        select_columns.append(monetary_value_col)
+    if mean_transaction_value_col:
+        select_columns.append(mean_transaction_value_col)
 
     transactions = transactions[select_columns].sort_values(select_columns).copy()
 
@@ -203,7 +203,7 @@ def _find_first_transactions(
         [datetime_col, customer_id_col], sort=False, as_index=False
     )
 
-    if monetary_value_col:
+    if mean_transaction_value_col:
         # when processing a monetary column, make sure to sum together transactions made in the same period
         period_transactions = period_groupby.sum()
     else:
@@ -235,7 +235,7 @@ def clv_summary(
     transactions: pd.DataFrame,
     customer_id_col: str,
     datetime_col: str,
-    monetary_value_col: Optional[str] = None,
+    mean_transaction_value_col: Optional[str] = None,
     datetime_format: Optional[str] = None,
     observation_period_end: Optional[Union[str, pd.Period, datetime]] = None,
     time_unit: str = "D",
@@ -245,9 +245,9 @@ def clv_summary(
     Summarize transaction data for modeling.
 
     This transforms a DataFrame of transaction data of the form:
-        customer_id, datetime [, monetary_value]
+        customer_id, datetime [, mean_transaction_value]
     to a DataFrame of the form:
-        customer_id, frequency, recency, T [, monetary_value]
+        customer_id, frequency, recency, T [, mean_transaction_value]
 
     Adapted from lifetimes package
     https://github.com/CamDavidsonPilon/lifetimes/blob/41e394923ad72b17b5da93e88cfabab43f51abe2/lifetimes/utils.py#L230
@@ -260,7 +260,7 @@ def clv_summary(
         Column in the transactions DataFrame that denotes the customer_id.
     datetime_col:  string
         Column in the transactions DataFrame that denotes the datetime the purchase was made.
-    monetary_value_col: string, optional
+    mean_transaction_value_col: string, optional
         Column in the transactions DataFrame that denotes the monetary value of the transaction.
         Optional; only needed for spend estimation models like the Gamma-Gamma model.
     observation_period_end: Union[str, pd.Period, datetime], optional
@@ -283,7 +283,7 @@ def clv_summary(
     Returns
     -------
     :obj: DataFrame:
-        customer_id, frequency, recency, T [, monetary_value]
+        customer_id, frequency, recency, T [, mean_transaction_value]
     """
 
     if observation_period_end is None:
@@ -306,7 +306,7 @@ def clv_summary(
         transactions,
         customer_id_col,
         datetime_col,
-        monetary_value_col,
+        mean_transaction_value_col,
         datetime_format,
         observation_period_end_ts,
         time_unit,
@@ -338,18 +338,18 @@ def clv_summary(
 
     summary_columns = ["frequency", "recency", "T", "min", "max", "count"]
 
-    if monetary_value_col:
-        monetary_group = repeated_transactions.groupby(customer_id_col)[monetary_value_col]
-        customers["monetary_value_incl"] = monetary_group.mean()
-        customers["total_monetary_value"] = monetary_group.sum()
+    if mean_transaction_value_col:
+        monetary_group = repeated_transactions.groupby(customer_id_col)[mean_transaction_value_col]
+        customers["mean_transaction_value_incl"] = monetary_group.mean()
+        customers["total_mean_transaction_value"] = monetary_group.sum()
 
         # create an index of first purchases
         first_purchases = repeated_transactions[repeated_transactions["first"]].index
         # Exclude first purchases from the mean value calculation,
         # by setting as null, then imputing with zero
-        repeated_transactions.loc[first_purchases, monetary_value_col] = np.nan
-        customers["monetary_value"] = repeated_transactions.groupby(customer_id_col)[monetary_value_col].mean().fillna(0)
-        summary_columns += ["monetary_value", "monetary_value_incl", "total_monetary_value"]
+        repeated_transactions.loc[first_purchases, mean_transaction_value_col] = np.nan
+        customers["mean_transaction_value"] = repeated_transactions.groupby(customer_id_col)[mean_transaction_value_col].mean().fillna(0)
+        summary_columns += ["mean_transaction_value", "mean_transaction_value_incl", "total_mean_transaction_value"]
 
-    customers = customers.astype({"frequency": float, "recency": float, "T": float, "monetary_value": float})
-    return customers[summary_columns].reset_index()
+    customers = customers.astype({"frequency": float, "recency": float, "T": float, "mean_transaction_value": float})
+    return customers[summary_columns]
